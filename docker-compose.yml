@@ -1,0 +1,43 @@
+version: "3.7"
+
+services:
+  
+    https-portal:
+      image: steveltn/https-portal
+      container_name: Homepage_SSLProxy
+      ports:  # Syntax: 'HOST:CONTAINER'
+        - '80:80'
+        - '443:443'
+      volumes:
+        - ./volumes/ssl_certs:/var/lib/https-portal
+      links:  # Syntax: service:hostname
+        - wordpress
+      restart: unless-stopped
+      environment: 
+        - DOMAINS=www.example.com => https://example.com, example.com -> http://wordpress
+        - STAGE=production
+      networks:
+        example-network:
+          ipv4_address: 172.23.2.10
+  
+    wordpress:
+      build: 
+        context: ./services/wordpress
+        target: prod
+      container_name: Homepage_wordpress
+      links:
+        - database:db
+      volumes:
+        - ./volumes/ssl_certs:/etc/ssl/certs
+      restart: unless-stopped
+      networks:
+        example-network:
+          ipv4_address: 172.23.2.20
+  
+networks:
+    example-network:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.23.2.0/24
